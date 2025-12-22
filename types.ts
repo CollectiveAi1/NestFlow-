@@ -80,6 +80,26 @@ export interface Invoice {
   date: string;
 }
 
+// --- CONSENT MODULE TYPES ---
+
+export type FormStatus = 'SIGNED' | 'PENDING';
+
+export interface ConsentTemplate {
+  id: string;
+  title: string;
+  content: string;
+  isRequired: boolean;
+}
+
+export interface SignedConsentForm {
+  id: string;
+  templateId: string;
+  childId: string;
+  status: FormStatus;
+  signedAt?: string;
+  signerName?: string;
+}
+
 // --- HEALTH MODULE TYPES ---
 
 export interface Immunization {
