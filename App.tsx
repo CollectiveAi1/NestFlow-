@@ -62,6 +62,12 @@ const INITIAL_CHILDREN: Child[] = [
   { id: 'p1', firstName: 'Oliver', lastName: 'Twist', avatarUrl: 'https://picsum.photos/200/200?random=101', classroom: 'Unassigned', classroomId: 'unassigned', status: 'ABSENT', enrollmentStatus: 'PENDING', dob: '2021-06-15', notes: 'Application submitted.' },
 ];
 
+const INITIAL_LEADS = [
+  { id: 'l1', parentName: 'Julia Grant', childName: 'Emma', status: 'Inquiry', source: 'Facebook', value: 1200, date: '2023-11-20' },
+  { id: 'l2', parentName: 'Mark Spencer', childName: 'Toby', status: 'Tour Scheduled', source: 'Google', value: 1400, date: '2023-11-22' },
+  { id: 'l3', parentName: 'Sarah Jenkins', childName: 'Lily', status: 'Waitlist', source: 'Referral', value: 1200, date: '2023-11-15' },
+];
+
 const INITIAL_GUARDIANS: Record<string, Guardian[]> = {
   '1': [{ id: 'g1', name: 'Sarah Dasher', relation: 'Mother', phone: '555-0101', email: 'sarah@example.com', avatarUrl: 'https://i.pravatar.cc/150?u=g1' }],
   'w1': [{ id: 'gw1', name: 'Ben Waites', relation: 'Father', phone: '555-9901', email: 'ben@example.com', avatarUrl: 'https://i.pravatar.cc/150?u=gw1' }],
@@ -79,7 +85,7 @@ interface NotificationLog {
 
 type ChildDetailTab = 'TIMELINE' | 'PROFILE' | 'HEALTH' | 'GUARDIANS' | 'BILLING';
 type StaffDetailTab = 'INFO' | 'ASSIGNMENTS';
-type AppSection = 'DAILY_OPS' | 'ENROLLMENT' | 'TEAM' | 'COMMUNICATIONS' | 'CLASSROOM_SETTINGS';
+type AppSection = 'DAILY_OPS' | 'ENROLLMENT' | 'TEAM' | 'COMMUNICATIONS' | 'CLASSROOM_SETTINGS' | 'CRM_DASHBOARD';
 
 const LoginScreen: React.FC<{ onLogin: (role: UserRole, userEmail: string) => void }> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -131,6 +137,7 @@ const App: React.FC = () => {
   const [classrooms, setClassrooms] = useState<Classroom[]>(INITIAL_CLASSROOMS);
   const [children, setChildren] = useState<Child[]>(INITIAL_CHILDREN);
   const [staff, setStaff] = useState<StaffMember[]>(INITIAL_STAFF);
+  const [leads, setLeads] = useState(INITIAL_LEADS);
   const [guardiansMap] = useState<Record<string, Guardian[]>>(INITIAL_GUARDIANS);
   const [notificationLogs, setNotificationLogs] = useState<NotificationLog[]>([]);
 
@@ -170,30 +177,111 @@ const App: React.FC = () => {
     showToast('Staff profile updated successfully!');
   };
 
+  const centerHealth = useMemo(() => {
+    const totalEnrolled = children.filter(c => c.enrollmentStatus === 'ENROLLED').length;
+    const totalCapacity = classrooms.reduce((acc, c) => acc + c.capacity, 0);
+    const occupancyRate = Math.round((totalEnrolled / totalCapacity) * 100);
+    const arTotal = 4250; // Mock AR
+    const ratios = classrooms.map(c => {
+      const childrenCount = children.filter(ch => ch.classroomId === c.id && ch.status === 'PRESENT').length;
+      const staffCount = staff.filter(s => s.assignedClassroomIds.includes(c.id)).length;
+      return { 
+        name: c.name, 
+        ratio: staffCount > 0 ? `${childrenCount}:${staffCount}` : 'N/A',
+        compliant: staffCount > 0 && (childrenCount / staffCount) <= 10 // Mock 1:10 rule
+      };
+    });
+
+    return { totalEnrolled, totalCapacity, occupancyRate, arTotal, ratios };
+  }, [children, classrooms, staff]);
+
   const SidebarContent = () => (
     <div className="space-y-6">
       {currentUser?.role === UserRole.ADMIN && (
         <div className="space-y-1">
-          <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">System Admin</h3>
-          <button onClick={() => setActiveSection('CLASSROOM_SETTINGS')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'CLASSROOM_SETTINGS' ? 'bg-primary-100 text-primary-600' : 'text-gray-600'}`}>⚙️ Classroom Settings</button>
-          <button onClick={() => setActiveSection('COMMUNICATIONS')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'COMMUNICATIONS' ? 'bg-primary-100 text-primary-600' : 'text-gray-600'}`}>💬 Messaging Log</button>
+          <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Management Suite</h3>
+          <button 
+            onClick={() => { setActiveSection('CRM_DASHBOARD'); setSelectedChildId(null); setSelectedStaffId(null); }} 
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'CRM_DASHBOARD' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            📊 Center Health & CRM
+          </button>
+          <button onClick={() => setActiveSection('CLASSROOM_SETTINGS')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'CLASSROOM_SETTINGS' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-50'}`}>⚙️ Classroom Settings</button>
+          <button onClick={() => setActiveSection('COMMUNICATIONS')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'COMMUNICATIONS' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-50'}`}>💬 Messaging Log</button>
         </div>
       )}
       <div className="space-y-1">
           <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Operations</h3>
-          <button onClick={() => setActiveSection('DAILY_OPS')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'DAILY_OPS' ? 'bg-primary-100 text-primary-600' : 'text-gray-600'}`}>🏠 Dashboard</button>
+          <button onClick={() => setActiveSection('DAILY_OPS')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'DAILY_OPS' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-50'}`}>🏠 Daily Feed</button>
           {currentUser?.role === UserRole.ADMIN && (
-            <button onClick={() => setActiveSection('ENROLLMENT')} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'ENROLLMENT' ? 'bg-primary-100 text-primary-600' : 'text-gray-600'}`}>
-              <span>📥 Enrollment</span>
+            <button onClick={() => setActiveSection('ENROLLMENT')} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'ENROLLMENT' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-50'}`}>
+              <span>📥 Admissions</span>
               <span className="bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded text-[10px]">{children.filter(c => c.enrollmentStatus === 'PENDING').length}</span>
             </button>
           )}
-          <button onClick={() => { setActiveSection('TEAM'); setSelectedChildId(null); setSelectedStaffId(null); }} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'TEAM' ? 'bg-primary-100 text-primary-600' : 'text-gray-600'}`}>👥 Staff</button>
+          <button onClick={() => { setActiveSection('TEAM'); setSelectedChildId(null); setSelectedStaffId(null); }} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold ${activeSection === 'TEAM' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-50'}`}>👥 Staff</button>
       </div>
     </div>
   );
 
   const ListPanelContent = () => {
+    if (activeSection === 'CRM_DASHBOARD') {
+      return (
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="flex justify-between items-end">
+             <div>
+               <h2 className="text-2xl font-display font-bold text-gray-800">Center CRM</h2>
+               <p className="text-sm text-gray-400 font-medium">Tracking growth and engagement</p>
+             </div>
+             <button className="px-4 py-2 bg-primary-400 text-white text-xs font-bold rounded-full shadow-lg shadow-primary-100">Add New Lead</button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            <div className="space-y-4">
+              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Sales Pipeline</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {['Inquiry', 'Tour Scheduled', 'Waitlist'].map(status => {
+                  const items = leads.filter(l => l.status === status);
+                  return (
+                    <div key={status} className="bg-white/50 border border-gray-100 rounded-3xl p-4 min-h-[150px]">
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">{status}</span>
+                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[10px] font-bold">{items.length}</span>
+                      </div>
+                      <div className="space-y-3">
+                        {items.map(lead => (
+                          <div key={lead.id} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+                            <p className="text-sm font-bold text-gray-800 group-hover:text-primary-500 transition-colors">{lead.childName}</p>
+                            <p className="text-[10px] text-gray-400">{lead.parentName} • {lead.source}</p>
+                            <div className="mt-2 flex justify-between items-center">
+                              <span className="text-xs font-bold text-primary-400">${lead.value}</span>
+                              <span className="text-[8px] text-gray-300 font-bold">{lead.date}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Lead Conversion Sources</h3>
+              <div className="bg-white rounded-3xl border border-gray-100 p-6 flex items-center justify-around gap-4">
+                {['Facebook', 'Google', 'Referral'].map(source => (
+                  <div key={source} className="text-center">
+                    <p className="text-xl font-display font-bold text-gray-800">{leads.filter(l => l.source === source).length}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{source}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (activeSection === 'TEAM') {
       return (
         <div className="space-y-6">
@@ -217,20 +305,7 @@ const App: React.FC = () => {
       );
     }
 
-    if (activeSection === 'COMMUNICATIONS') return (
-      <div className="space-y-4">
-        <h2 className="text-xl font-display font-bold text-gray-800">Auto-Notifications</h2>
-        <div className="space-y-2">
-           {notificationLogs.map(log => (
-             <div key={log.id} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                <p className="text-sm font-bold text-gray-800">{log.recipient}</p>
-                <p className="text-xs text-gray-500">{log.subject}</p>
-             </div>
-           ))}
-        </div>
-      </div>
-    );
-
+    // Default Daily Ops
     return (
       <div className="space-y-6">
           <div className="space-y-2">
@@ -255,6 +330,63 @@ const App: React.FC = () => {
   };
 
   const DetailPanelContent = () => {
+    if (activeSection === 'CRM_DASHBOARD' && !selectedStaff && !selectedChild) {
+      return (
+        <div className="flex flex-col h-full bg-white animate-in slide-in-from-right-4 duration-300">
+          <div className="p-8 border-b border-gray-100 bg-primary-50/30">
+            <h3 className="text-xl font-display font-bold text-gray-800">Center Health Pulse</h3>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Real-time Operational Metrics</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white border border-gray-100 p-5 rounded-[32px] shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Occupancy</p>
+                <p className="text-2xl font-display font-bold text-primary-500">{centerHealth.occupancyRate}%</p>
+                <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                   <div className="bg-primary-300 h-full rounded-full" style={{ width: `${centerHealth.occupancyRate}%` }}></div>
+                </div>
+              </div>
+              <div className="bg-white border border-gray-100 p-5 rounded-[32px] shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">AR Overdue</p>
+                <p className="text-2xl font-display font-bold text-accent-300">${centerHealth.arTotal}</p>
+                <p className="text-[8px] text-gray-400 font-bold mt-1">5 FAMILIES PENDING</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+               <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Ratio Compliance</h4>
+               <div className="space-y-2">
+                 {centerHealth.ratios.map(room => (
+                   <div key={room.name} className="flex items-center justify-between p-4 bg-surface-50 rounded-2xl border border-gray-100">
+                     <div>
+                       <p className="text-sm font-bold text-gray-700">{room.name}</p>
+                       <p className="text-[10px] text-gray-400">Current Ratio: <span className="font-bold">{room.ratio}</span></p>
+                     </div>
+                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase ${room.compliant ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                       {room.compliant ? 'Compliant' : 'Warning'}
+                     </span>
+                   </div>
+                 ))}
+               </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-gray-900 to-gray-700 p-6 rounded-[32px] text-white shadow-xl relative overflow-hidden">
+               <div className="relative z-10">
+                 <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-4">Projected Monthly Revenue</p>
+                 <p className="text-4xl font-display font-bold">$48,200</p>
+                 <div className="mt-6 flex justify-between items-center text-[10px] font-bold uppercase text-white/40">
+                    <span>Target: $50k</span>
+                    <span className="text-primary-300">96.4% to goal</span>
+                 </div>
+               </div>
+               <div className="absolute top-0 right-0 w-32 h-32 bg-primary-400/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (selectedStaff) {
       return (
         <div className="flex flex-col h-full bg-white animate-in slide-in-from-right-4 duration-300">
@@ -267,7 +399,6 @@ const App: React.FC = () => {
                </div>
              </div>
           </div>
-          
           <div className="mt-14 px-8 flex gap-2 border-b border-gray-100 overflow-x-auto no-scrollbar">
             {['INFO', 'ASSIGNMENTS'].map(tab => (
               <button 
@@ -280,116 +411,32 @@ const App: React.FC = () => {
               </button>
             ))}
           </div>
-
-          <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
+          <div className="flex-1 overflow-y-auto p-8 space-y-8">
             {activeStaffTab === 'INFO' && (
-              <div className="space-y-8">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-display font-bold text-gray-800 text-lg">Staff Profile</h3>
-                  {!isEditingStaff && currentUser?.role === UserRole.ADMIN && (
-                    <button 
-                      onClick={() => { setIsEditingStaff(true); setEditStaffData({ ...selectedStaff }); }} 
-                      className="text-xs font-bold text-accent-300 hover:underline"
-                    >
-                      Edit Profile
-                    </button>
-                  )}
-                </div>
-
-                {isEditingStaff ? (
-                  <div className="space-y-4 bg-gray-50 p-6 rounded-3xl border border-gray-100 animate-in zoom-in-95">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase pl-1">Biography</label>
-                      <textarea 
-                        rows={4} 
-                        value={editStaffData.bio || ''} 
-                        onChange={e => setEditStaffData({ ...editStaffData, bio: e.target.value })} 
-                        className="w-full p-3 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-accent-300 outline-none"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase pl-1">Email</label>
-                        <input 
-                          type="email" 
-                          value={editStaffData.email || ''} 
-                          onChange={e => setEditStaffData({ ...editStaffData, email: e.target.value })} 
-                          className="w-full p-3 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-accent-300 outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase pl-1">Phone</label>
-                        <input 
-                          type="text" 
-                          value={editStaffData.phone || ''} 
-                          onChange={e => setEditStaffData({ ...editStaffData, phone: e.target.value })} 
-                          className="w-full p-3 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-accent-300 outline-none"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                      <button onClick={() => setIsEditingStaff(false)} className="px-4 py-2 text-sm font-bold text-gray-400">Cancel</button>
-                      <button onClick={handleUpdateStaff} className="px-6 py-2 bg-accent-300 text-white rounded-xl font-bold shadow-lg shadow-pink-100 transition-transform active:scale-95">Save Changes</button>
-                    </div>
+              <div className="space-y-6">
+                <div className="flex justify-between items-center"><h3 className="font-display font-bold text-gray-800 text-lg">Staff Profile</h3></div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 bg-surface-50 p-4 rounded-2xl border border-gray-100">
+                    <div className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm">✉️</div>
+                    <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</p><p className="text-sm font-bold text-gray-700">{selectedStaff.email}</p></div>
                   </div>
-                ) : (
-                  <>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4 bg-surface-50 p-4 rounded-2xl border border-gray-100">
-                        <div className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm">✉️</div>
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email Address</p>
-                          <p className="text-sm font-bold text-gray-700">{selectedStaff.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 bg-surface-50 p-4 rounded-2xl border border-gray-100">
-                        <div className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm">📞</div>
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Phone Number</p>
-                          <p className="text-sm font-bold text-gray-700">{selectedStaff.phone}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="relative">
-                      <div className="absolute -left-3 top-0 text-4xl text-accent-300 opacity-20">"</div>
-                      <p className="text-sm text-gray-600 leading-relaxed italic pl-4 border-l-2 border-accent-300/20">
-                        {selectedStaff.bio || "No biography provided for this staff member."}
-                      </p>
-                    </div>
-
-                    <div className="pt-6 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                       <span>Joined NestFlow</span>
-                       <span className="text-gray-600">{new Date(selectedStaff.joinedDate).toLocaleDateString()}</span>
-                    </div>
-                  </>
-                )}
+                  <div className="flex items-center gap-4 bg-surface-50 p-4 rounded-2xl border border-gray-100">
+                    <div className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm">📞</div>
+                    <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Phone</p><p className="text-sm font-bold text-gray-700">{selectedStaff.phone}</p></div>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 italic border-l-2 border-accent-300/30 pl-4">{selectedStaff.bio}</p>
               </div>
             )}
-
             {activeStaffTab === 'ASSIGNMENTS' && (
-              <div className="space-y-6">
-                 <h3 className="font-display font-bold text-gray-800 text-lg">Classroom Assignments</h3>
-                 <div className="space-y-3">
-                    {classrooms.map(room => {
-                      const isAssigned = selectedStaff.assignedClassroomIds.includes(room.id);
-                      return (
-                        <div 
-                          key={room.id} 
-                          className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isAssigned ? 'bg-primary-50 border-primary-100 ring-1 ring-primary-100' : 'bg-gray-50 border-transparent opacity-60'}`}
-                        >
-                           <div>
-                             <p className={`font-bold ${isAssigned ? 'text-primary-700' : 'text-gray-400'}`}>{room.name}</p>
-                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{room.enrolled} Enrolled</p>
-                           </div>
-                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isAssigned ? 'bg-primary-300 text-white shadow-sm' : 'bg-gray-200 text-white'}`}>
-                              {isAssigned ? '✓' : ''}
-                           </div>
-                        </div>
-                      );
-                    })}
-                 </div>
-              </div>
+               <div className="space-y-3">
+                 {classrooms.map(room => (
+                   <div key={room.id} className={`flex items-center justify-between p-4 rounded-2xl border ${selectedStaff.assignedClassroomIds.includes(room.id) ? 'bg-primary-50 border-primary-200' : 'bg-gray-50 opacity-40'}`}>
+                      <p className="font-bold text-gray-700">{room.name}</p>
+                      {selectedStaff.assignedClassroomIds.includes(room.id) && <span className="text-primary-500">✓</span>}
+                   </div>
+                 ))}
+               </div>
             )}
           </div>
         </div>
@@ -447,8 +494,8 @@ const App: React.FC = () => {
     return (
       <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center bg-gray-50/50">
         <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 text-3xl shadow-inner animate-pulse">🌱</div>
-        <h3 className="text-lg font-display font-bold text-gray-600">Operations Panel</h3>
-        <p className="text-xs mt-2 max-w-[240px] leading-relaxed">Select a classroom member or staff directory entry to view detailed records and history.</p>
+        <h3 className="text-lg font-display font-bold text-gray-600">Select an Item</h3>
+        <p className="text-xs mt-2 max-w-[240px] leading-relaxed">Choose a lead, child, or staff member to see detailed analytics and history.</p>
       </div>
     );
   };
