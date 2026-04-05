@@ -145,7 +145,7 @@ CREATE TABLE invoices (
   center_id UUID REFERENCES centers(id) ON DELETE CASCADE,
   guardian_id UUID REFERENCES guardians(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL,
-  amount DECIMAL(10, 2) NOT NULL,
+  amount DECIMAL NOT NULL,
   status invoice_status DEFAULT 'PENDING',
   due_date DATE,
   paid_at TIMESTAMP,

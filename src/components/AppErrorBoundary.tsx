@@ -5,14 +5,16 @@ interface AppErrorBoundaryState {
   errorMessage: string | null;
 }
 
-export class AppErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  AppErrorBoundaryState
-> {
-  state: AppErrorBoundaryState = {
-    hasError: false,
-    errorMessage: null,
-  };
+type Props = { children: React.ReactNode };
+
+export class AppErrorBoundary extends React.Component<Props, AppErrorBoundaryState> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      errorMessage: null,
+    };
+  }
 
   static getDerivedStateFromError(error: Error): AppErrorBoundaryState {
     return {

@@ -7,7 +7,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        'brand-teal': '#4ECDC4',
+        'brand-teal': '#0D9488',
+        'brand-yellow': '#F59E0B',
+        'brand-dark': '#0F172A',
         'brand-pink': '#FF6B9D',
         'brand-sky': '#95E1D3',
         'brand-peach': '#FFD3B6',
@@ -22,7 +24,8 @@ export default {
       },
       boxShadow: {
         'blob': '0 10px 40px rgba(78, 205, 196, 0.2)',
-        'soft': '0 4px 20px rgba(0, 0, 0, 0.05)',
+        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+        'float': '0 10px 30px -5px rgba(13, 148, 136, 0.15)',
         '3xl': '0 20px 60px rgba(0, 0, 0, 0.15)',
       },
       animation: {

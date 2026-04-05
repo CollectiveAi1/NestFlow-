@@ -18,7 +18,9 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
     `;
     const params: any[] = [centerId];
 
-    if (classroomId) {
+    // Only add classroom filter if it's a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (classroomId && uuidRegex.test(classroomId)) {
       queryText += ' AND c.classroom_id = $2';
       params.push(classroomId);
     }

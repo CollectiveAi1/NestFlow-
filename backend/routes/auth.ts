@@ -48,8 +48,8 @@ router.post('/login', async (req, res) => {
         role: user.role,
         centerId: user.center_id,
       },
-      process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      (process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production') as jwt.Secret,
+      { expiresIn: '7d' as any }
     );
 
     res.json({
@@ -106,8 +106,8 @@ router.post('/register', async (req, res) => {
         role: user.role,
         centerId: user.center_id,
       },
-      process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      (process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production') as jwt.Secret,
+      { expiresIn: '7d' as any }
     );
 
     res.status(201).json({

@@ -96,3 +96,10 @@ export const messagesApi = {
 
   markRead: (id: string) => api.patch(`/messages/${id}/read`),
 };
+
+// Staff API
+export const staffApi = {
+  getAll: () => api.get('/staff'),
+  getSchedules: (weekStartDate?: string) => api.get('/staff/schedules', { params: { weekStartDate } }),
+  updateSchedule: (data: { staffId: string; day: string; shiftType: string; weekStartDate: string }) => api.post('/staff/schedules', data),
+};

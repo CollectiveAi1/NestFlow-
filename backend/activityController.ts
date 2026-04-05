@@ -1,4 +1,4 @@
-import { Activity, ActivityType } from '../types';
+import { Activity, ActivityType } from '../src/types';
 
 // Mock database interface
 interface Database {

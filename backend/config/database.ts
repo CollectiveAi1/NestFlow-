@@ -1,7 +1,8 @@
-import { newDb } from 'pg-mem';
+import { newDb, DataType } from 'pg-mem';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,8 +10,19 @@ const __dirname = path.dirname(__filename);
 // Create an in-memory database
 const db = newDb();
 
+// Register uuid-ossp extension
+db.registerExtension('uuid-ossp', (schema) => {
+  schema.registerFunction({
+    name: 'uuid_generate_v4',
+    returns: DataType.uuid,
+    implementation: () => crypto.randomUUID(),
+    impure: true,
+  });
+});
+
 // Get the connection pool
-export const pool = db.adapters.createPg().Pool;
+const { Pool } = db.adapters.createPg();
+export const pool = new Pool();
 
 // Initialize the database schema
 const schemaPath = path.join(__dirname, 'schema.sql');
@@ -22,8 +34,8 @@ if (fs.existsSync(schemaPath)) {
     
     // Insert some mock data
     db.public.none(`
-      INSERT INTO centers (id, name, address, phone, email, capacity)
-      VALUES ('11111111-1111-1111-1111-111111111111', 'Happy Kids Daycare', '123 Main St', '555-0100', 'info@happykids.com', 50);
+      INSERT INTO centers (id, name, address, phone, email)
+      VALUES ('11111111-1111-1111-1111-111111111111', 'Happy Kids Daycare', '123 Main St', '555-0100', 'info@happykids.com');
 
       INSERT INTO users (id, center_id, email, password_hash, first_name, last_name, role)
       VALUES 

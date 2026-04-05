@@ -1,7 +1,0 @@
-{
-  "name": "Child Care Compass",
-  "description": "A production-ready, mobile-first childcare management platform with a playful, organic design.",
-  "requestFramePermissions": [
-    "camera"
-  ]
-}

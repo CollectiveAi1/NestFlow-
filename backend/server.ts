@@ -8,6 +8,7 @@ import childrenRoutes from './routes/children';
 import activitiesRoutes from './routes/activities';
 import attendanceRoutes from './routes/attendance';
 import messagesRoutes from './routes/messages';
+import staffRoutes from './routes/staff';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 
@@ -43,6 +44,7 @@ async function startServer() {
   app.use('/api/activities', activitiesRoutes);
   app.use('/api/attendance', attendanceRoutes);
   app.use('/api/messages', messagesRoutes);
+  app.use('/api/staff', staffRoutes);
 
   // Socket.IO for real-time updates
   io.on('connection', (socket) => {
@@ -101,8 +103,8 @@ async function startServer() {
   }
 
   // Start server
-  const PORT = process.env.PORT || 3000;
-  httpServer.listen(PORT, () => {
+  const PORT = 3000;
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`
   🚀 Child Care Compass Server Started
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -115,5 +117,3 @@ async function startServer() {
 }
 
 startServer();
-
-export { io };
