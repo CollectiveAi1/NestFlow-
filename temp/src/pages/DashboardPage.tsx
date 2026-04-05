@@ -4,7 +4,6 @@ import { childrenApi, attendanceApi } from '../lib/api';
 import { useStore } from '../store/useStore';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { socketService } from '../lib/socket';
-import { UserRole } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const { user, showToast } = useStore();
@@ -18,7 +17,6 @@ export const DashboardPage: React.FC = () => {
       const response = await childrenApi.getAll(selectedClassroom);
       return response.data;
     },
-    enabled: user?.role === UserRole.ADMIN || user?.role === UserRole.TEACHER,
   });
 
   // Check-in mutation
@@ -67,54 +65,13 @@ export const DashboardPage: React.FC = () => {
     );
   }
 
-  // Parent View
-  if (user?.role === UserRole.PARENT) {
-    return (
-      <div className="p-6">
-        <div className="mb-8">
-          <h1 className="text-4xl font-black text-slate-800 mb-2">Parent Portal</h1>
-          <p className="text-slate-600">
-            Welcome to your parent portal. Here you can communicate with teachers and view your child's information.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-3xl shadow-soft border border-slate-100">
-            <h2 className="text-2xl font-bold text-brand-teal mb-4">My Children</h2>
-            <p className="text-slate-500">Your children's profiles and daily activities will appear here.</p>
-            {/* Placeholder for parent's children list */}
-          </div>
-          <div className="bg-white p-6 rounded-3xl shadow-soft border border-slate-100">
-            <h2 className="text-2xl font-bold text-brand-teal mb-4">Messages</h2>
-            <p className="text-slate-500">Communicate directly with your child's teachers.</p>
-            {/* Placeholder for messaging interface */}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Admin & Teacher View
   return (
     <div className="p-6">
-      <div className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-4xl font-black text-slate-800 mb-2">
-            {user?.role === UserRole.ADMIN ? 'Center Operations' : 'Classroom Dashboard'}
-          </h1>
-          <p className="text-slate-600">
-            Manage check-ins, check-outs, and daily activities
-          </p>
-        </div>
-        {user?.role === UserRole.ADMIN && (
-          <div className="flex gap-4">
-            <button className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl shadow-sm hover:bg-slate-50 transition-all">
-              Manage Staff
-            </button>
-            <button className="px-6 py-3 bg-brand-teal text-white font-bold rounded-2xl shadow-lg shadow-brand-teal/30 hover:scale-105 transition-all">
-              CRM / Enrollment
-            </button>
-          </div>
-        )}
+      <div className="mb-8">
+        <h1 className="text-4xl font-black text-slate-800 mb-2">Daily Operations</h1>
+        <p className="text-slate-600">
+          Manage check-ins, check-outs, and daily activities
+        </p>
       </div>
 
       <div className="mb-6">

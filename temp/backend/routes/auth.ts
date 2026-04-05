@@ -77,9 +77,6 @@ router.post('/register', async (req, res) => {
   try {
     const { email, password, role, firstName, lastName, centerId } = RegisterSchema.parse(req.body);
 
-    // Default to the mock center if not provided
-    const finalCenterId = centerId || '11111111-1111-1111-1111-111111111111';
-
     // Check if user exists
     const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
@@ -94,7 +91,7 @@ router.post('/register', async (req, res) => {
       `INSERT INTO users (email, password_hash, role, first_name, last_name, center_id)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, email, role, first_name, last_name, center_id`,
-      [email, passwordHash, role, firstName, lastName, finalCenterId]
+      [email, passwordHash, role, firstName, lastName, centerId]
     );
 
     const user = result.rows[0];

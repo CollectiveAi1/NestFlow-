@@ -6,7 +6,6 @@ import { useStore } from './store/useStore';
 import { socketService } from './lib/socket';
 import { Toast } from './components/Toast';
 import { LoginPage } from './pages/LoginPage';
-import { SignUpPage } from './pages/SignUpPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AdminLayout } from './layouts/AdminLayout';
 
@@ -42,7 +41,6 @@ const App: React.FC = () => {
       <HashRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
           <Route
             path="/dashboard"
             element={

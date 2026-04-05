@@ -87,15 +87,6 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-6">
-          <button
-            onClick={() => navigate('/signup')}
-            className="text-brand-teal font-bold hover:underline"
-          >
-            Don't have an account? Sign Up
-          </button>
-        </div>
-
         <div className="mt-6 text-xs text-slate-400">
           <p>Demo Mode: Use any email with password "demo123"</p>
           <p className="mt-2">Note: Database setup required for full functionality</p>
